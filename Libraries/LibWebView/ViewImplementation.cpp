@@ -1453,6 +1453,13 @@ void ViewImplementation::send_input_event(size_t index)
 
 void ViewImplementation::handle_external_url(Badge<WebContentPage>, URL::URL url, URL::Origin initiator_origin, bool has_transient_activation)
 {
+    // A load the browser's UI started, such as a URL another application asked us to open, can be redirected to a URL
+    // that is handled externally. This is how many OAuth sign-ins hand their consent step to a native app. No input
+    // reached the page, so nothing has allowed the request, and it would be dropped silently, leaving the tab blank.
+    // The user did start this navigation, so ask them whether to open the URL, as other browsers do.
+    if (browser_ui_load_url().has_value())
+        m_external_url_request_policy.allow_next_request();
+
     handle_external_url(move(url), move(initiator_origin), has_transient_activation);
 }
 
